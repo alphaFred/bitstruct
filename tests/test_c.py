@@ -807,6 +807,11 @@ class CTest(unittest.TestCase):
         self.assertEqual(packed, b'\x3e\x82\x16')
         self.assertEqual(cf.unpack(packed), unpacked)
 
+    def test_generate(self):
+        if not is_cpython_3():
+            return
+
+        generated = generate('u1u1p6u7u9')
 
 if __name__ == '__main__':
     unittest.main()

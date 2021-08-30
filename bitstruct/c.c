@@ -2023,6 +2023,90 @@ static PyObject *m_compile(PyObject *module_p,
     }
 }
 
+PyDoc_STRVAR(generate___doc__,
+             "generate(fmt)\n"
+             "--\n"
+             "\n");
+
+static PyObject *generate(struct info_t *info_p,
+                      PyObject *args_p,
+                      int consumed_args,
+                      Py_ssize_t number_of_args)
+{    
+    return (Py_None);
+}
+
+static PyObject *m_generate(PyObject *module_p, PyObject *args_p)
+{
+    Py_ssize_t number_of_args;
+    PyObject *generated_p;
+    struct info_t *info_p;
+
+    number_of_args = PyTuple_GET_SIZE(args_p);
+
+    if (number_of_args < 1) {
+        PyErr_SetString(PyExc_ValueError, "No format string.");
+
+        return (NULL);
+    }
+
+    info_p = parse_format(PyTuple_GET_ITEM(args_p, 0));
+
+    printf("number_of_bits - %d\n", info_p->number_of_bits);
+    printf("number_of_fields - %d\n", info_p->number_of_fields);
+    printf("number_of_non_padding_fields - %d\n", info_p->number_of_non_padding_fields);
+
+/*
+struct field_info_t {
+    pack_field_t pack;
+    unpack_field_t unpack;
+    int number_of_bits;
+    bool is_padding;
+    union {
+        struct {
+            int64_t lower;
+            int64_t upper;
+        } s;
+        struct {
+            uint64_t upper;
+        } u;
+    } limits;
+};
+*/
+    unsigned int position = info_p->number_of_bits;
+    for (int i = 0; i < info_p->number_of_fields; ++i)
+    {
+        
+        struct field_info_t fi = info_p->fields[i];
+
+        printf("field %d\n", i);
+        printf("{\n");
+        printf("    pack_field_t pack;\n");
+        printf("    unpack_field_t unpack;\n");
+        printf("    int number_of_bits = %d;\n", fi.number_of_bits);
+        printf("    bool is_padding;\n");
+        printf("    union {\n");
+        printf("        struct {\n");
+        printf("            int64_t lower=%ld;\n", fi.limits.s.lower);
+        printf("            int64_t upper=%ld;\n", fi.limits.s.upper);
+        printf("        } s;\n");
+        printf("        struct {\n");
+        printf("            uint64_t upper=%ld;\n", fi.limits.u.upper);
+        printf("        } u;\n");
+        printf("    } limits;\n");
+        printf("};\n");
+    }
+
+    if (info_p == NULL) {
+        return (NULL);
+    }
+
+    generated_p = generate(info_p, args_p, 1, number_of_args - 1);
+    PyMem_RawFree(info_p);
+
+    return (generated_p);
+}
+
 static struct PyMethodDef methods[] = {
     {
         "pack",
@@ -2090,6 +2174,12 @@ static struct PyMethodDef methods[] = {
         METH_VARARGS | METH_KEYWORDS,
         compile___doc__
     },
+    {
+        "generate",
+        (PyCFunction)m_generate,
+        METH_VARARGS,
+        generate___doc__
+    },    
     { NULL }
 };
 
