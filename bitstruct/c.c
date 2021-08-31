@@ -4,6 +4,7 @@
 
 #include <Python.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "bitstream.h"
 
 struct field_info_t;
@@ -2056,45 +2057,19 @@ static PyObject *m_generate(PyObject *module_p, PyObject *args_p)
     printf("number_of_fields - %d\n", info_p->number_of_fields);
     printf("number_of_non_padding_fields - %d\n", info_p->number_of_non_padding_fields);
 
-/*
-struct field_info_t {
-    pack_field_t pack;
-    unpack_field_t unpack;
-    int number_of_bits;
-    bool is_padding;
-    union {
-        struct {
-            int64_t lower;
-            int64_t upper;
-        } s;
-        struct {
-            uint64_t upper;
-        } u;
-    } limits;
-};
-*/
     unsigned int position = info_p->number_of_bits;
     for (int i = 0; i < info_p->number_of_fields; ++i)
     {
-        
         struct field_info_t fi = info_p->fields[i];
 
-        printf("field %d\n", i);
-        printf("{\n");
-        printf("    pack_field_t pack;\n");
-        printf("    unpack_field_t unpack;\n");
-        printf("    int number_of_bits = %d;\n", fi.number_of_bits);
-        printf("    bool is_padding;\n");
-        printf("    union {\n");
-        printf("        struct {\n");
-        printf("            int64_t lower=%ld;\n", fi.limits.s.lower);
-        printf("            int64_t upper=%ld;\n", fi.limits.s.upper);
-        printf("        } s;\n");
-        printf("        struct {\n");
-        printf("            uint64_t upper=%ld;\n", fi.limits.u.upper);
-        printf("        } u;\n");
-        printf("    } limits;\n");
-        printf("};\n");
+        if(!fi.is_padding)
+        {
+            position -= fi.number_of_bits;
+            uint32_t mask_shifted = ((1 << fi.number_of_bits) - 1) << position;
+            printf("#define MASK_FIELD_%u\t(0x%08X)U\n", i, mask_shifted);
+            printf("#define SHIFT_FIELD_%u\t(%u)U\n", i, position);
+            printf("#define FIELD_%u(x)\t(((uint32_t)(((uint32_t)(x)) << SHIFT_FIELD_%u)) & MASK_FIELD_%u\n", i, i, i);            
+        }
     }
 
     if (info_p == NULL) {
